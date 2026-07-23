@@ -14,10 +14,12 @@ jobs:
     strategy:
       matrix:
         ruby:
-          - '3.2.1'
+          - "4.0.6"
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+    # ubuntu-latest (24.04) does not ship recent MRI; setup-ruby@v1
+    # downloads prebuilt binaries so system apt Ruby is not required.
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
