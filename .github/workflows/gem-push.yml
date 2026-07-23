@@ -25,14 +25,30 @@ jobs:
       with:
         ruby-version: "4.0.6"
 
+    - name: Build gem
+      run: gem build *.gemspec
+
+    # Only publish on pushes to main (not PRs). Re-pushing an existing
+    # version is treated as success so routine commits do not fail CI.
     - name: Publish to GPR
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: |
         mkdir -p $HOME/.gem
         touch $HOME/.gem/credentials
         chmod 0600 $HOME/.gem/credentials
         printf -- "---\n:github: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
-        gem build *.gemspec
-        gem push --KEY github --host https://rubygems.pkg.github.com/${OWNER} *.gem
+        set +e
+        output=$(gem push --KEY github --host "https://rubygems.pkg.github.com/${OWNER}" *.gem 2>&1)
+        status=$?
+        set -e
+        echo "$output"
+        if [ "$status" -ne 0 ]; then
+          if echo "$output" | grep -qi 'already been pushed'; then
+            echo "Gem version already published; treating as success."
+            exit 0
+          fi
+          exit "$status"
+        fi
       env:
         GEM_HOST_API_KEY: "Bearer ${{secrets.GITHUB_TOKEN}}"
         OWNER: ${{ github.repository_owner }}

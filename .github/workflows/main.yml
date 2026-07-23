@@ -24,6 +24,9 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
+        # Bundler 4 multi-platform resolution fails on this lockfile
+        # (mini_portile2 / arm64-darwin + x86_64-linux). Pin 2.x.
+        bundler: "2.6.9"
         bundler-cache: true
     - name: Run the default task
       run: bundle exec rake
